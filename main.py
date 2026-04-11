@@ -1,16 +1,17 @@
-# main.py
 # The loop. Start here to test each piece as you build it.
-
 from listener import listen
 from brain import chat
-
-# TODO: build the main loop
-# 1. listen() to get transcribed text
-# 2. pass it to chat() to get a response
-# 3. print the response for now (speaker comes day 2)
-# 4. loop back to step 1
-# 5. add a way to quit (e.g. if text contains "goodbye" or "exit")
+from speaker import speak
 
 if __name__ == "__main__":
-    print("Assistant ready. Start talking.")
-    pass  # your loop goes here
+    speak("Hello! I'm your assistant. How can I help you today?")
+    goodbye_phrases = ["goodbye", "good bye", "exit", "quit"]
+    while True:
+        user_message = listen()
+        if not user_message.strip():
+            continue
+        if any(phrase in user_message.lower().replace(" ", "") for phrase in goodbye_phrases):
+            speak("Goodbye!")
+            break
+        response = chat(user_message)
+        speak(response)

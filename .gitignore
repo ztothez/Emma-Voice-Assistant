@@ -169,3 +169,7 @@ poetry.toml
 
 # LSP config files
 pyrightconfig.json
+
+# Piper TTS voice models (large binary files)
+*.onnx
+*.onnx.json

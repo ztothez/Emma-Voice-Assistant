@@ -1,15 +1,13 @@
-# listener.py
 # Responsible for: capturing audio from mic, transcribing with Whisper
-# Your task: implement record_audio() and transcribe()
-
 import sounddevice as sd
 import numpy as np
 from faster_whisper import WhisperModel
 
-SAMPLE_RATE = 16000 # Hz
-DURATION = 5 # seconds to record, start with something like 5
+SAMPLE_RATE = 16000 #higher rates = better quality but more CPU usage
+DURATION = 10  # seconds 
 model = WhisperModel("base", device="cpu", compute_type="int8")
 
+# Functions to capture and transcribe audio. In a real app, you'd want to handle edge cases, errors, and maybe do some VAD to only capture when someone is speaking.
 def record_audio():
     """Record audio from microphone and return as numpy array."""
     print("Listening...")
@@ -20,7 +18,7 @@ def record_audio():
 def transcribe(audio: np.ndarray) -> str:
     """Transcribe audio array to text using Whisper."""
     audio = audio.squeeze()
-    segments, info = model.transcribe(audio)
+    segments, info = model.transcribe(audio, language="en")
     return " ".join(segment.text for segment in segments)
 
 def listen() -> str:

@@ -1,6 +1,6 @@
 # AI Voice Assistant
 
-A local, fully offline voice assistant named **Emma**. Speak to her, she listens, thinks, and talks back — all running on your machine.
+A local, fully offline voice assistant named **Emma**. Speak to her, she listens, thinks, and talks back all running on your machine.
 
 ## How it works
 

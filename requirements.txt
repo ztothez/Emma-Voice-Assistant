@@ -3,3 +3,6 @@ sounddevice
 numpy
 piper-tts
 requests
+fastapi
+uvicorn[standard]
+python-multipart

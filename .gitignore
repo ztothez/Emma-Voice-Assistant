@@ -72,6 +72,9 @@ instance/
 # Sphinx documentation
 docs/_build/
 
+#Other documentation
+documents/
+
 # PyBuilder
 .pybuilder/
 target/
@@ -173,3 +176,24 @@ pyrightconfig.json
 # Piper TTS voice models (large binary files)
 *.onnx
 *.onnx.json
+
+# Emma / Colab — data, exports, weights (private or large; regenerate locally)
+emma_dataset.json
+emma_history.json
+*.jsonl
+data/
+datasets/
+
+# Model & checkpoint binaries (GGUF, LoRA, PyTorch, etc.)
+*.gguf
+*.safetensors
+*.pt
+*.pth
+*.ckpt
+*.bin
+*.h5
+*.onnx_data
+emma-lora-out/
+
+# Colab “Download” copies of the adapter folder often land next to the project
+adapter_model.safetensors

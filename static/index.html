@@ -1,0 +1,539 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Emma</title>
+  <style>
+    :root {
+      --bg: #0f1218;
+      --panel: #181c27;
+      --text: #e8eaef;
+      --muted: #8b93a7;
+      --user: #2a3f6b;
+      --emma: #1e3d32;
+      --accent: #6ee7b7;
+      --err: #f87171;
+      --call: #4c1d95;
+      --call-ring: #7c3aed;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: ui-sans-serif, system-ui, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      display: flex;
+      flex-direction: column;
+    }
+    header {
+      padding: 0.75rem 1.25rem;
+      border-bottom: 1px solid #2a3142;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 1rem;
+      flex-wrap: wrap;
+    }
+    header h1 {
+      margin: 0;
+      font-size: 1.15rem;
+      font-weight: 600;
+      letter-spacing: 0.02em;
+    }
+    header h1 span { color: var(--accent); }
+    .toolbar { display: flex; gap: 0.5rem; flex-wrap: wrap; align-items: center; }
+    button {
+      background: var(--panel);
+      color: var(--text);
+      border: 1px solid #3d465a;
+      padding: 0.45rem 0.85rem;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 0.875rem;
+    }
+    button:hover { border-color: var(--muted); }
+    button.primary {
+      background: #1f4d3f;
+      border-color: #2d6b58;
+    }
+    button.primary:hover { background: #256b56; }
+    button.call-btn {
+      background: var(--call);
+      border-color: var(--call-ring);
+      font-weight: 600;
+    }
+    button.call-btn:hover { background: #5b21b6; }
+    button.call-btn.active {
+      background: #7f1d1d;
+      border-color: #dc2626;
+    }
+    button:disabled { opacity: 0.5; cursor: not-allowed; }
+    #log {
+      flex: 1;
+      overflow-y: auto;
+      padding: 1rem 1.25rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.65rem;
+      max-width: 720px;
+      width: 100%;
+      margin: 0 auto;
+    }
+    .bubble {
+      max-width: 92%;
+      padding: 0.65rem 0.9rem;
+      border-radius: 12px;
+      line-height: 1.45;
+      font-size: 0.95rem;
+      white-space: pre-wrap;
+    }
+    .bubble.user {
+      align-self: flex-end;
+      background: var(--user);
+      border: 1px solid #3d5694;
+    }
+    .bubble.emma {
+      align-self: flex-start;
+      background: var(--emma);
+      border: 1px solid #2d5a4a;
+    }
+    .bubble.system {
+      align-self: center;
+      background: var(--panel);
+      color: var(--muted);
+      font-size: 0.8rem;
+      border: 1px dashed #3d465a;
+    }
+    .meta { font-size: 0.7rem; color: var(--muted); margin-bottom: 0.2rem; }
+    #callPanel {
+      display: none;
+      margin: 0 auto 0.5rem;
+      max-width: 720px;
+      width: 100%;
+      padding: 0 1.25rem;
+    }
+    #callPanel.visible { display: block; }
+    .call-card {
+      background: linear-gradient(145deg, #1a1530 0%, var(--panel) 100%);
+      border: 1px solid var(--call-ring);
+      border-radius: 16px;
+      padding: 1rem 1.25rem;
+      text-align: center;
+    }
+    .call-card p {
+      margin: 0 0 0.75rem;
+      font-size: 0.9rem;
+      color: var(--muted);
+    }
+    #pttBtn {
+      width: 100%;
+      max-width: 280px;
+      margin: 0 auto;
+      display: block;
+      padding: 1rem 1.5rem;
+      font-size: 1.05rem;
+      border-radius: 999px;
+      border: 2px solid var(--call-ring);
+      background: #2e1065;
+      color: #f5f3ff;
+      user-select: none;
+      touch-action: none;
+    }
+    #pttBtn.recording {
+      background: #991b1b;
+      border-color: #f87171;
+      animation: pulse 1s ease-in-out infinite;
+    }
+    @keyframes pulse {
+      50% { box-shadow: 0 0 0 6px rgba(248, 113, 113, 0.25); }
+    }
+    footer {
+      padding: 0.75rem 1.25rem 1rem;
+      border-top: 1px solid #2a3142;
+      max-width: 720px;
+      width: 100%;
+      margin: 0 auto;
+    }
+    .row { display: flex; gap: 0.5rem; }
+    textarea {
+      flex: 1;
+      min-height: 44px;
+      max-height: 120px;
+      resize: vertical;
+      background: var(--panel);
+      color: var(--text);
+      border: 1px solid #3d465a;
+      border-radius: 10px;
+      padding: 0.6rem 0.75rem;
+      font: inherit;
+    }
+    textarea:focus { outline: 2px solid #2d6b58; border-color: transparent; }
+    #status { font-size: 0.8rem; color: var(--muted); margin-top: 0.35rem; min-height: 1.2em; }
+    #status.err { color: var(--err); }
+  </style>
+</head>
+<body>
+  <audio id="player" preload="none"></audio>
+  <header>
+    <h1><span>Emma</span> · voice assistant</h1>
+    <div class="toolbar">
+      <button type="button" id="callToggle" class="call-btn" title="Voice call: hold to talk">Call</button>
+      <button type="button" id="micBtn" title="Browser speech-to-text (Chrome)">Mic</button>
+      <button type="button" id="reloadBtn">Reload history</button>
+      <button type="button" id="clearBtn">Clear memory</button>
+    </div>
+  </header>
+  <div id="log"></div>
+  <div id="callPanel">
+    <div class="call-card">
+      <p><strong>Call mode</strong> — hold the button, speak, release to send. Emma answers with voice.</p>
+      <button type="button" id="pttBtn" disabled>Hold to talk</button>
+    </div>
+  </div>
+  <footer>
+    <div class="row">
+      <textarea id="input" rows="2" placeholder="Type a message… (Enter to send, Shift+Enter newline)"></textarea>
+      <button type="button" class="primary" id="sendBtn">Send</button>
+    </div>
+    <div id="status"></div>
+  </footer>
+  <script>
+    const logEl = document.getElementById("log");
+    const input = document.getElementById("input");
+    const sendBtn = document.getElementById("sendBtn");
+    const statusEl = document.getElementById("status");
+    const micBtn = document.getElementById("micBtn");
+    const clearBtn = document.getElementById("clearBtn");
+    const reloadBtn = document.getElementById("reloadBtn");
+    const callToggle = document.getElementById("callToggle");
+    const callPanel = document.getElementById("callPanel");
+    const pttBtn = document.getElementById("pttBtn");
+    const player = document.getElementById("player");
+
+    let recognition = null;
+    try {
+      const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+      if (SR) {
+        recognition = new SR();
+        recognition.continuous = false;
+        recognition.interimResults = false;
+        recognition.lang = "en-US";
+      }
+    } catch (_) {}
+
+    if (!recognition) {
+      micBtn.disabled = true;
+      micBtn.title = "Speech recognition not available in this browser";
+    }
+
+    let callActive = false;
+    let callStream = null;
+    let mediaRecorder = null;
+    let recChunks = [];
+    let recMime = "audio/webm";
+    let voiceBusy = false;
+    let pttDown = false;
+
+    function setStatus(msg, isErr) {
+      statusEl.textContent = msg || "";
+      statusEl.classList.toggle("err", !!isErr);
+    }
+
+    function bubble(role, content) {
+      const wrap = document.createElement("div");
+      wrap.className = "bubble " + role;
+      if (role === "user") wrap.innerHTML = '<div class="meta">You</div>' + escapeHtml(content);
+      else if (role === "emma") wrap.innerHTML = '<div class="meta">Emma</div>' + escapeHtml(content);
+      else wrap.innerHTML = '<div class="meta">System</div>' + escapeHtml(content.slice(0, 200) + (content.length > 200 ? "…" : ""));
+      logEl.appendChild(wrap);
+      logEl.scrollTop = logEl.scrollHeight;
+    }
+
+    function escapeHtml(s) {
+      const d = document.createElement("div");
+      d.textContent = s;
+      return d.innerHTML;
+    }
+
+    function clearLog() {
+      logEl.innerHTML = "";
+    }
+
+    async function loadHistory() {
+      setStatus("Loading history…");
+      try {
+        const r = await fetch("/api/history");
+        if (!r.ok) throw new Error(await r.text());
+        const data = await r.json();
+        clearLog();
+        for (const m of data.messages || []) {
+          if (m.role === "system") bubble("system", m.content);
+          else if (m.role === "user") bubble("user", m.content);
+          else if (m.role === "assistant") bubble("emma", m.content);
+        }
+        setStatus("");
+      } catch (e) {
+        setStatus("Could not load history: " + e.message, true);
+      }
+    }
+
+    async function sendMessage() {
+      const text = input.value.trim();
+      if (!text) return;
+      input.value = "";
+      bubble("user", text);
+      sendBtn.disabled = true;
+      setStatus("Emma is thinking…");
+      try {
+        const r = await fetch("/api/chat", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ message: text }),
+        });
+        const data = await r.json().catch(() => ({}));
+        if (!r.ok) throw new Error(data.detail || r.statusText);
+        bubble("emma", data.reply || "");
+        setStatus("");
+      } catch (e) {
+        setStatus(e.message || "Request failed", true);
+        bubble("emma", "(Could not reach the server or Ollama.)");
+      } finally {
+        sendBtn.disabled = false;
+        input.focus();
+      }
+    }
+
+    async function playTts(text) {
+      const r = await fetch("/api/tts", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ text }),
+      });
+      if (!r.ok) {
+        const err = await r.json().catch(() => ({}));
+        throw new Error(err.detail || r.statusText || "TTS failed");
+      }
+      const blob = await r.blob();
+      const url = URL.createObjectURL(blob);
+      player.src = url;
+      await player.play();
+      await new Promise((res, rej) => {
+        player.onended = () => {
+          URL.revokeObjectURL(url);
+          res();
+        };
+        player.onerror = () => {
+          URL.revokeObjectURL(url);
+          rej(new Error("playback failed"));
+        };
+      });
+    }
+
+    async function voiceTurn(blob) {
+      if (voiceBusy) return;
+      voiceBusy = true;
+      pttBtn.disabled = true;
+      setStatus("Transcribing…");
+      try {
+        const fd = new FormData();
+        fd.append("file", blob, "turn.webm");
+        const tr = await fetch("/api/transcribe", { method: "POST", body: fd });
+        const td = await tr.json().catch(() => ({}));
+        if (!tr.ok) throw new Error(td.detail || tr.statusText || "transcribe failed");
+        const text = (td.text || "").trim();
+        if (!text) {
+          setStatus("Didn't catch that — try again.", true);
+          return;
+        }
+        bubble("user", text);
+        setStatus("Emma is thinking…");
+        const cr = await fetch("/api/chat", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ message: text }),
+        });
+        const cd = await cr.json().catch(() => ({}));
+        if (!cr.ok) throw new Error(cd.detail || cr.statusText);
+        const reply = (cd.reply || "").trim();
+        bubble("emma", reply);
+        setStatus("Speaking…");
+        await playTts(reply);
+        setStatus(callActive ? "Hold to talk when ready." : "");
+      } catch (e) {
+        setStatus(e.message || "Call step failed", true);
+      } finally {
+        voiceBusy = false;
+        if (callActive) pttBtn.disabled = false;
+      }
+    }
+
+    function pickMime() {
+      if (MediaRecorder.isTypeSupported("audio/webm;codecs=opus")) return "audio/webm;codecs=opus";
+      if (MediaRecorder.isTypeSupported("audio/webm")) return "audio/webm";
+      return "";
+    }
+
+    function startPttRecord() {
+      if (!callStream || voiceBusy || pttDown) return;
+      pttDown = true;
+      recChunks = [];
+      recMime = pickMime() || "audio/webm";
+      try {
+        mediaRecorder = new MediaRecorder(callStream, recMime ? { mimeType: recMime } : undefined);
+      } catch (_) {
+        mediaRecorder = new MediaRecorder(callStream);
+        recMime = mediaRecorder.mimeType || "audio/webm";
+      }
+      mediaRecorder.ondataavailable = (e) => {
+        if (e.data.size) recChunks.push(e.data);
+      };
+      mediaRecorder.start(100);
+      pttBtn.classList.add("recording");
+      pttBtn.textContent = "Release to send";
+      setStatus("Listening…");
+    }
+
+    async function stopPttRecord() {
+      if (!pttDown || !mediaRecorder || mediaRecorder.state === "inactive") {
+        pttDown = false;
+        pttBtn.classList.remove("recording");
+        return;
+      }
+      pttDown = false;
+      pttBtn.classList.remove("recording");
+      pttBtn.textContent = "Hold to talk";
+      const mr = mediaRecorder;
+      mediaRecorder = null;
+      const blob = await new Promise((resolve) => {
+        mr.onstop = () => {
+          const b = new Blob(recChunks, { type: recMime });
+          resolve(b);
+        };
+        mr.stop();
+      });
+      if (blob.size < 2000) {
+        setStatus("Too short — hold a bit longer.", true);
+        return;
+      }
+      await voiceTurn(blob);
+    }
+
+    function bindPtt(el) {
+      el.addEventListener("mousedown", (e) => { e.preventDefault(); startPttRecord(); });
+      el.addEventListener("mouseup", () => stopPttRecord());
+      el.addEventListener("mouseleave", () => { if (pttDown) stopPttRecord(); });
+      el.addEventListener("touchstart", (e) => { e.preventDefault(); startPttRecord(); }, { passive: false });
+      el.addEventListener("touchend", (e) => { e.preventDefault(); stopPttRecord(); });
+      el.addEventListener("touchcancel", () => stopPttRecord());
+    }
+
+    callToggle.addEventListener("click", async () => {
+      if (callActive) {
+        callActive = false;
+        callToggle.classList.remove("active");
+        callToggle.textContent = "Call";
+        callPanel.classList.remove("visible");
+        pttBtn.disabled = true;
+        if (callStream) {
+          callStream.getTracks().forEach((t) => t.stop());
+          callStream = null;
+        }
+        pttDown = false;
+        if (mediaRecorder && mediaRecorder.state !== "inactive") {
+          try { mediaRecorder.stop(); } catch (_) {}
+        }
+        mediaRecorder = null;
+        pttBtn.classList.remove("recording");
+        pttBtn.textContent = "Hold to talk";
+        setStatus("Call ended.");
+        return;
+      }
+      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+        setStatus("Microphone not available in this browser.", true);
+        return;
+      }
+      try {
+        callStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      } catch (e) {
+        setStatus("Mic permission denied or unavailable.", true);
+        return;
+      }
+      callActive = true;
+      callToggle.classList.add("active");
+      callToggle.textContent = "End call";
+      callPanel.classList.add("visible");
+      pttBtn.disabled = false;
+      setStatus("Hold to talk when ready.");
+    });
+
+    bindPtt(pttBtn);
+
+    sendBtn.addEventListener("click", sendMessage);
+    input.addEventListener("keydown", (e) => {
+      if (e.key === "Enter" && !e.shiftKey) {
+        e.preventDefault();
+        sendMessage();
+      }
+    });
+
+    clearBtn.addEventListener("click", async () => {
+      if (!confirm("Clear saved chat memory?")) return;
+      setStatus("Clearing…");
+      try {
+        const r = await fetch("/api/history/clear", { method: "POST" });
+        if (!r.ok) throw new Error(await r.text());
+        await loadHistory();
+        setStatus("Memory cleared.");
+      } catch (e) {
+        setStatus(e.message, true);
+      }
+    });
+
+    reloadBtn.addEventListener("click", loadHistory);
+
+    if (recognition) {
+      let micOn = false;
+      micBtn.addEventListener("click", () => {
+        if (micOn) {
+          try { recognition.stop(); } catch (_) {}
+          micOn = false;
+          micBtn.textContent = "Mic";
+          setStatus("");
+          return;
+        }
+        micOn = true;
+        micBtn.textContent = "Stop";
+        setStatus("Listening…");
+        recognition.onresult = (ev) => {
+          const t = ev.results[0][0].transcript.trim();
+          if (t) input.value = (input.value + " " + t).trim();
+          micOn = false;
+          micBtn.textContent = "Mic";
+          setStatus("");
+        };
+        recognition.onerror = () => {
+          micOn = false;
+          micBtn.textContent = "Mic";
+          setStatus("Mic error — try typing instead.", true);
+        };
+        recognition.onend = () => {
+          if (micOn) {
+            micOn = false;
+            micBtn.textContent = "Mic";
+            setStatus("");
+          }
+        };
+        try { recognition.start(); } catch (_) {
+          micOn = false;
+          micBtn.textContent = "Mic";
+        }
+      });
+    }
+
+    loadHistory();
+    input.focus();
+  </script>
+</body>
+</html>

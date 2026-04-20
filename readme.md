@@ -1,4 +1,4 @@
-# Emma — local AI voice assistant
+# Emma: local AI voice assistant
 
 A **fully local** voice assistant: microphone → speech-to-text → LLM → text-to-speech, without sending your speech to a cloud API.
 

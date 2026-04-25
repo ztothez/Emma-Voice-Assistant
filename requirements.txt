@@ -1,6 +1,6 @@
 faster-whisper
 sounddevice
-numpy
+numpy>=1.22.2
 piper-tts
 requests>=2.33.1
 fastapi>=0.136.1

@@ -2,7 +2,14 @@ faster-whisper
 sounddevice
 numpy
 piper-tts
-requests
-fastapi
+requests>=2.33.1
+fastapi>=0.136.1
 uvicorn[standard]
-python-multipart
+python-multipart>=0.0.26
+protobuf>=7.34.1
+starlette>=1.0.0
+h11>=0.16.0
+zipp>=3.23.1
+urllib3>=2.6.3
+onnxruntime>=1.25.0
+anyio>=4.13.0

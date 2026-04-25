@@ -244,21 +244,23 @@
     function bubble(role, content) {
       const wrap = document.createElement("div");
       wrap.className = "bubble " + role;
-      if (role === "user") wrap.innerHTML = '<div class="meta">You</div>' + escapeHtml(content);
-      else if (role === "emma") wrap.innerHTML = '<div class="meta">Emma</div>' + escapeHtml(content);
-      else wrap.innerHTML = '<div class="meta">System</div>' + escapeHtml(content.slice(0, 200) + (content.length > 200 ? "…" : ""));
+      const meta = document.createElement("div");
+      meta.className = "meta";
+      meta.textContent = role === "user" ? "You" : role === "emma" ? "Emma" : "System";
+
+      const body = document.createElement("div");
+      const text = String(content || "");
+      body.textContent = role === "user" || role === "emma"
+        ? text
+        : text.slice(0, 200) + (text.length > 200 ? "…" : "");
+
+      wrap.append(meta, body);
       logEl.appendChild(wrap);
       logEl.scrollTop = logEl.scrollHeight;
     }
 
-    function escapeHtml(s) {
-      const d = document.createElement("div");
-      d.textContent = s;
-      return d.innerHTML;
-    }
-
     function clearLog() {
-      logEl.innerHTML = "";
+      logEl.replaceChildren();
     }
 
     async function loadHistory() {
